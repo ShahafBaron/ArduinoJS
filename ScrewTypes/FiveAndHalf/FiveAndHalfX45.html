@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z"
+      crossorigin="anonymous"
+    />
+    <script
+      src="https://kit.fontawesome.com/e80947895c.js"
+      crossorigin="anonymous"
+    ></script>
+    <title>Screw 5.5x45</title>
+  </head>
+  <body>
+    <div class="container d-flex flex-column align-items-center">
+      <h1 class="text-center my-4">Screw: 5.5x45</h1>
+
+      <button
+        id="back"
+        type="button"
+        class="btn btn-primary btn-lg col-8 mb-2"
+        onclick="back()"
+      >
+        Back
+      </button>
+      <button
+        id="home"
+        type="button"
+        class="btn btn-secondary btn-lg col-8 mb-2"
+      >
+        Home Position
+      </button>
+      <div class="card text-white bg-dark col-8 mb-2 ">
+        <h4 class="card-header text-success">Monitor</h4>
+        <div class="card-body">
+          <p class="card-text" id="monitor" style="color: #45ff00; font-size: 25px;"></p>
+          <p class="card-text" id="monitor2" style="color: #45ff00 ; font-size: 25px;"></p>
+        </div>
+      </div>
+
+      <button id="start" type="button" class="btn btn-success btn-lg col-8 mb-2">
+        Start
+      </button>
+      <button id="stop" type="button" class="btn btn-danger btn-lg col-8">
+        Stop
+      </button>
+    </div>
+
+    <script
+      src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+      integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+      integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
+      integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- important!! include socket.io client side script -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
+    <script>
+      //load socket.io-client and connect to the host that serves the page
+      var socket = io();
+      var type = 5.5;
+      var length = 45;
+
+      var intervalId;
+
+      document.getElementById("monitor").innerHTML =
+        "Hello, press 'Start' to start welding";
+      document.getElementById("monitor2").innerHTML = `Screw ${type}x${length}`;
+
+      function startTimer() {
+        var minutes = 1;
+        var seconds = 16;
+        intervalId = setInterval(function () {
+          seconds--;
+          if (seconds < 0) {
+            minutes--;
+            seconds = 59;
+          }
+          if (minutes < 0) {
+            clearInterval(intervalId);
+            // alert("Time's up!");
+            seconds = 16;
+            minutes = 1;
+          }
+          document.getElementById(
+            "monitor2"
+          ).innerHTML = `Time remaining: ${minutes}:${seconds}`;
+        }, 1000);
+      }
+
+      // Listen for messages from the server
+      socket.on("message", (message) => {
+        console.log(message); // "Hello from the server!"
+        document.getElementById("monitor2").innerHTML = message;
+      });
+      $("#home").on("click", () => {
+        console.log(`Go to home position`);
+        $("#monitor").text(`Go to home position`);
+        socket.emit("home");
+      });
+      $("#start").on("click", () => {
+        startTimer();
+        console.log(`Start ${type}x${length}`);
+        $("#monitor").text(`Screw ${type}x${length}`);
+        socket.emit("start", {
+          screwType: type,
+          screwLength: length,
+          revX1: 2.373 / 4,
+          revX2: 7.234 / 4,
+          revX3: 2.5 / 4,
+          revX4: 10.5 / 4,
+          revX5: 2.19 / 4,
+          revZ1: 0, // const
+          revZ2: 0.36 / 2,
+          revZ3: 0, // const
+          revZ4: 0.85 / 2,
+          revZ5: 0.178 / 2,
+          revA1: 1.079,
+          revA2: 3.287,
+          revA3: 1.136,
+          revA4: 4.773,
+          revA5: 1,
+          revXstartPoint: 2,
+          revAstartPoint: 0,
+          revZstartPoint: 2,
+          TotalRevX: 6.3,
+          TotalRevZ: 0.7,
+        });
+      });
+      function back() {
+        document.location.href = "http://localhost:3000/FiveAndHalf";
+      }
+      $("#stop").on("click", () => {
+        clearInterval(intervalId);
+        console.log(`Stop ${type}x${length}`);
+        $("#monitor").text(`Stop ${type}x${length}`);
+        socket.emit("stop", {
+          screwType: type,
+          screwLength: length,
+        });
+      });
+    </script>
+  </body>
+</html>

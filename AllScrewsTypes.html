@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z"
+      crossorigin="anonymous"
+    />
+    <script
+      src="https://kit.fontawesome.com/e80947895c.js"
+      crossorigin="anonymous"
+    ></script>
+    <title>Choose your screw type</title>
+  </head>
+
+  <script
+    src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+    integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+    crossorigin="anonymous"
+  ></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+    integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+    crossorigin="anonymous"
+  ></script>
+  <script
+    src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
+    integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV"
+    crossorigin="anonymous"
+  ></script>
+  <!-- important!! include socket.io client side script -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
+  <script>
+    function screwType(type, AndHalf) {
+      document.location.href = `http://localhost:3000/${type}${AndHalf}`;
+    }
+    function otherAndHalf(Length) {
+      document.location.href = "http://localhost:3000/Five";
+    }
+    //load socket.io-client and connect to the host that serves the page
+    var socket = io();
+  </script>
+  <body class="bg-color">
+    <style>
+      button {
+        width: 100%;
+      }
+      button:hover {
+        box-shadow: 0 3px 80px rgba(0, 0, 0, 0.16),
+          0 3px 6px rgba(0, 0, 0, 0.23);
+        opacity: 0.8;
+      }
+      .bg-color {
+        background-color: #d2edec;
+      }
+    </style>
+    <div class="container d-flex flex-column align-items-center">
+      <h4 class="text-center">Welcome to the LaserWelding Machine :)</h4>
+      <div class="text-center">
+        <div class="col-50">
+          <div class="card">
+            <h4 class="card-header">
+              <i class="fas fa-cog"></i>&nbsp;&nbsp;5 Screws
+            </h4>
+            <div class="card-body">
+              <button
+                id="five"
+                class="btn btn-primary btn-lg"
+                onclick="screwType(`Five`, ``)"
+              >
+                5
+              </button>
+            </div>
+          </div>
+          <div class="card">
+            <h4 class="card-header">
+              <i class="fas fa-cog"></i>&nbsp;&nbsp;5.5 Screws
+            </h4>
+            <div class="card-body">
+              <button
+                id="fiveAndHalf"
+                class="btn btn-primary btn-lg"
+                onclick="screwType(`Five`, `AndHalf`)"
+              >
+                5.5
+              </button>
+            </div>
+          </div>
+          <div class="card">
+            <h4 class="card-header">
+              <i class="fas fa-cog"></i>&nbsp;&nbsp;6.5 Screws
+            </h4>
+            <div class="card-body">
+              <button
+                id="sixAndHalf"
+                class="btn btn-primary btn-lg"
+                onclick="screwType(`Six`, `AndHalf`)"
+              >
+                6.5
+              </button>
+            </div>
+          </div>
+          <div class="card">
+            <h4 class="card-header">
+              <i class="fas fa-cog"></i>&nbsp;&nbsp;7.5 Screws
+            </h4>
+            <div class="card-body">
+              <button
+                id="sevenAndHalf"
+                class="btn btn-primary btn-lg"
+                onclick="screwType(`Seven`, `AndHalf`)"
+              >
+                7.5
+              </button>
+            </div>
+          </div>
+          <div class="card">
+            <h4 class="card-header">
+              <i class="fas fa-cog"></i>&nbsp;&nbsp;8.5 Screws
+            </h4>
+            <div class="card-body">
+              <button
+                id="eightAndHalf"
+                class="btn btn-primary btn-lg"
+                onclick="screwType(`Eight`, `AndHalf`)"
+              >
+                8.5
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

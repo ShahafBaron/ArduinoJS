@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z"
+      crossorigin="anonymous"
+    />
+    <script
+      src="https://kit.fontawesome.com/e80947895c.js"
+      crossorigin="anonymous"
+    ></script>
+    <title>Choose the right program</title>
+  </head>
+
+  <script>
+    function back() {
+      document.location.href = "http://localhost:3000";
+    }
+    function fiveAndHalf(Length) {
+      document.location.href = `http://localhost:3000/FiveAndHalfX${Length}`;
+    }
+  </script>
+  <body class="bg-color">
+    <style>
+      /* Center the container */
+      .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      button {
+        width: 300px;
+        height: 100px;
+        margin: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      }
+      button:hover {
+        box-shadow: 0 3px 80px rgba(0, 0, 0, 0.16),
+          0 3px 6px rgba(0, 0, 0, 0.23);
+      }
+      .bg-color {
+        background-color: #d2edec;
+      }
+    </style>
+    <div>
+      <h1 class="text-center my-3">Choose Screw Length</h1>
+      <div class="container d-flex flex-column align-items-center col-8">
+        <button
+          id="back"
+          type="button"
+          class="btn btn-primary btn-lg col-8 mb-2"
+          onclick="back()"
+        >
+          Back
+        </button>
+        <div class="text-center col-8">
+          <div class="card">
+            <h4 class="card-header">
+              <i class="fas fa-cog"></i>&nbsp;&nbsp;5.5 Screws
+            </h4>
+            <div class="container d-flex">
+              <button
+                id="fiveAndHalfX35"
+                class="btn btn-info btn-lg"
+                onclick="fiveAndHalf(35)"
+              >
+                5.5x35
+              </button>
+              <button
+                id="fiveAndHalfX40"
+                class="btn btn-info btn-lg"
+                onclick="fiveAndHalf(40)"
+              >
+                5.5x40
+              </button>
+              <button
+                id="fiveAndHalfX45"
+                class="btn btn-info btn-lg"
+                onclick="fiveAndHalf(45)"
+              >
+                5.5x45
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
