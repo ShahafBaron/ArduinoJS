@@ -1,196 +1,229 @@
+require("events").EventEmitter.defaultMaxListeners = 10000;
+
 // "Express" initializes "app" to be a function handler that you can supply to an HTTP server
 const express = require("express");
 const app = express();
+
 // Initialize a new instance of socket.io by passing the http (the HTTP server) object.
 const http = require("http").createServer(app);
 const io = require("socket.io")(http);
 const opn = require("opn");
 const { Board, Led, Stepper, Button } = require("johnny-five");
-var speedX = 54.8, //RPM Speed
-  speedZ = 8.8,
-  speedA = 100,
-  speedToStartPoint = 3000,
-  stepsRevX = 6400, // per the stepper driver
-  stepsRevZ = 6400,
-  stepsRevA = 6400,
-  maxRevbackHomeX = 50,
-  maxRevbackHomeZ = 10,
-  stepsX1 = 0,
-  stepsX2 = 0,
-  stepsX3 = 0,
-  stepsX4 = 0,
-  stepsX5 = 0,
-  stepsZ1 = 0,
-  stepsZ2 = 0,
-  stepsZ3 = 0,
-  stepsZ4 = 0,
-  stepsZ5 = 0,
-  stepsA1 = 0,
-  stepsA2 = 0,
-  stepsA3 = 0,
-  stepsA4 = 0,
-  stepsA5 = 0,
-  stepsXstartPoint = 0,
-  stepsAstartPoint = 0,
-  stepsZstartPoint = 0,
-  screwType,
-  firstConnection = 1,
-  pinStepStepperX = 7,
-  pinDirStepperX = 6,
-  pinEnableX = 12,
-  pinStepStepperZ = 9,
-  pinDirStepperZ = 8,
-  pinEnableZ = 11,
-  pinStepStepperA = 5,
-  pinDirStepperA = 4,
-  pinEnableA = 10,
-  pinEnableWelding = 2,
-  pinEnableGas = 3,
-  ignoreFalse = 0,
-  msg;
+
+let accelAll = 500;
+let speedX = 56; //RPM Speed
+let speedA = 100;
+let speedZ1 = 8.8;
+let speedZ2 = 8.8;
+let speedZ3 = 8.8;
+let speedZ4 = 8.8;
+let speedZ5 = 8.8;
+const speedToStartPoint = 3000;
+const stepsRevX = 6400; // per the stepper driver
+const stepsRevZ = 6400;
+const stepsRevA = 6400;
+let maxRevbackHomeX = 100000;
+let maxRevbackHomeZ = 100;
+let stepsX1 = 0;
+let stepsX2 = 0;
+let stepsX3 = 0;
+let stepsX4 = 0;
+let stepsX5 = 0;
+let stepsZ1 = 0;
+let stepsZ2 = 0;
+let stepsZ3 = 0;
+let stepsZ4 = 0;
+let stepsZ5 = 0;
+let stepsA1 = 0;
+let stepsA2 = 0;
+let stepsA3 = 0;
+let stepsA4 = 0;
+let stepsA5 = 0;
+let stepsXstartPoint = 0;
+let stepsZstartPoint = 0;
+// let stepsAstartPoint = 0;
+let screwType;
+let ignoreFalseX = 0;
+let ignoreFalseZ = 0;
+let ignoreFalseA = 0;
+// For menual Commands
+let enableWeldingAndGas = 0;
+// pin # on the Arduino
+const LEDpin = 13;
+const pinEnableX = 4;
+const pinDirStepperX = 5;
+const pinStepStepperX = 6;
+const limitSwitchXstart = 22;
+const pinEnableZ = 7;
+const pinDirStepperZ = 8;
+const pinStepStepperZ = 9;
+const limitSwitchZstart = 26;
+const pinEnableA = 10;
+const pinDirStepperA = 11;
+const pinStepStepperA = 12;
+const limitSwitchA = 27;
+const pinEnableWelding = 2;
+const pinEnableGas = 3;
+//,
+/* can be used
+const limitSwitchXmiddle = 23,
+const limitSwitchXend = 24,
+const limitSwitchZend = 25;
+*/
+
+const startUrl = "http://localhost:3000";
+const port = 3000;
+const boardPort = "COM3";
+
+let board;
+let led;
+let stepperZ;
+let stepperX;
+let stepperA;
+let buttonXstart;
+let buttonZstart;
+let buttonA;
 
 ///////////////////////////////////////////////////////////////
 // Open COM3 when connected first time
-if (firstConnection) {
-  board = new Board({ repl: false, port: "COM3" }); // To connect to a specific COM port number
-  //Listenig to: http://localhost:3000/
-  http.listen(3000, () => {
-    console.log("listening on 3000....");
+
+board = new Board({ repl: false, port: boardPort }); // To connect to a specific COM port number
+//Listening  to: http://localhost:port#
+http.listen(port, () => {
+  console.log(`listening on ${port}....`); // WebSocket Connection - Listening  to the frontend (client / user side)
+});
+opn(startUrl, { app: "google chrome" }); // Open Google Chrome
+
+board.on("ready", () => {
+  console.log("board is ready");
+
+  led = new Led(LEDpin); // init a led on pin 13
+  led.fadeIn(); // Turn on the LED
+
+  board.pinMode(pinEnableWelding, board.MODES.OUTPUT);
+  board.pinMode(pinEnableGas, board.MODES.OUTPUT);
+  board.pinMode(pinEnableA, board.MODES.OUTPUT); // StepperA
+  board.pinMode(pinEnableZ, board.MODES.OUTPUT); // StepperZ
+  board.pinMode(pinEnableX, board.MODES.OUTPUT); // StepperX
+
+  stepperZ = new Stepper({
+    type: Stepper.TYPE.DRIVER,
+    stepsPerRev: stepsRevZ,
+    pins: {
+      step: pinStepStepperZ,
+      dir: pinDirStepperZ,
+    },
   });
-  // Open Google Chrome
-  opn("http://localhost:3000", { app: "google chrome" });
-  // WebSocket Connection - Listenig to the frontens (client / user side)
+  stepperX = new Stepper({
+    type: Stepper.TYPE.DRIVER,
+    stepsPerRev: stepsRevX,
+    pins: {
+      step: pinStepStepperX,
+      dir: pinDirStepperX,
+    },
+  });
+  stepperA = new Stepper({
+    type: Stepper.TYPE.DRIVER,
+    stepsPerRev: stepsRevA,
+    pins: {
+      step: pinStepStepperA,
+      dir: pinDirStepperA,
+    },
+  });
 
-  board.on("ready", () => {
-    console.log("board is ready");
-    // init a led on pin 13, blink every 1000ms
-    led = new Led(13);
+  buttonXstart = new Button({
+    pin: limitSwitchXstart,
+    isPullup: true,
+  });
+  // buttonXmiddle = new Button({
+  //   pin: limitSwitchXmiddle,
+  //   isPullup: true,
+  // });
+  // buttonXend = new Button({
+  //   pin: limitSwitchXend,
+  //   isPullup: true,
+  // });
+  buttonZstart = new Button({
+    pin: limitSwitchZstart,
+    isPullup: true,
+  });
+  // buttonZend = new Button({
+  //   pin: limitSwitchZend,
+  //   isPullup: true,
+  // });
+  buttonA = new Button({
+    pin: limitSwitchA,
+    isPullup: true,
+  });
+  // let buttonAPressed = false;
+  // let buttonAPressStartTime = 0;
+  // buttonA.on("down", () => {
+  //   buttonAPressed = true;
+  //   buttonAPressStartTime = Date.now();
+  // });
+  // buttonA.on("up", () => {
+  //   buttonAPressed = false;
+  // });
 
-    board.pinMode(pinEnableWelding, board.MODES.OUTPUT);
-    board.pinMode(pinEnableGas, board.MODES.OUTPUT);
-    board.pinMode(pinEnableA, board.MODES.OUTPUT); // StepperX
-    board.pinMode(pinEnableZ, board.MODES.OUTPUT); // StepperZ
-    board.pinMode(pinEnableX, board.MODES.OUTPUT); // StepperA
+  // chkButtonA = setInterval(() => {
+  //   if (buttonAPressed) {
+  //     const elapsedTime = Date.now() - buttonAPressStartTime;
+  //     if (elapsedTime >= 20) {
+  //       // more than 20 ms
+  //       board.digitalWrite(pinEnableWelding, 0); // Stop welding
+  //       board.digitalWrite(pinEnableA, 0); // Stop motors StepperX
+  //       console.log(
+  //         "buttonA- A at home - ButtonA has been pressed for at least 20 ms!"
+  //       );
+  //       clearInterval(chkButtonA);
+  //     }
+  //   }
+  // }, 100); // Check if the buttonAPressed variable is true every 100 milliseconds.
 
-    stepperZ = new Stepper({
-      type: Stepper.TYPE.DRIVER,
-      stepsPerRev: stepsRevZ,
-      pins: {
-        step: pinStepStepperZ,
-        dir: pinDirStepperZ,
-      },
-    });
-    stepperX = new Stepper({
-      type: Stepper.TYPE.DRIVER,
-      stepsPerRev: stepsRevX,
-      pins: {
-        step: pinStepStepperX,
-        dir: pinDirStepperX,
-      },
-    });
-    stepperA = new Stepper({
-      type: Stepper.TYPE.DRIVER,
-      stepsPerRev: stepsRevA,
-      pins: {
-        step: pinStepStepperA,
-        dir: pinDirStepperA,
-      },
-    });
+  buttonXstart.on("down", () => {
+    if (ignoreFalseX === 0) {
+      board.digitalWrite(pinEnableWelding, 0); // Stop welding
+      console.log("buttonXstart- X at home");
+      motors(3);
+    }
+  });
 
-    buttonXstart = new Button({
-      pin: 22,
-      isPullup: true,
-    });
-    // buttonXmiddle = new Button({
-    //   pin: 23,
-    //   isPullup: true,
-    // });
-    // buttonXend = new Button({
-    //   pin: 24,
-    //   isPullup: true,
-    // });
-    buttonZstart = new Button({
-      pin: 25,
-      isPullup: true,
-    });
-    // buttonZend = new Button({
-    //   pin: 26,
-    //   isPullup: true,
-    // });
-    buttonA = new Button({
-      pin: 27,
-      isPullup: true,
-    });
-
-    let buttonAPressed = false;
-    let buttonAPressStartTime = 0;
-
-    buttonA.on("down", () => {
-      buttonAPressed = true;
-      buttonAPressStartTime = Date.now();
-    });
-    buttonA.on("up", () => {
-      buttonAPressed = false;
-    });
-
-    setInterval(() => {
-      if (buttonAPressed) {
-        const elapsedTime = Date.now() - buttonAPressStartTime;
-        if (elapsedTime >= 20) {
-          // more than 20 ms
-          led.stop().off();
-          board.digitalWrite(pinEnableWelding, 0); // Stop welding
-          board.digitalWrite(pinEnableA, 0); // Stop motors StepperX
-          console.log(
-            "buttonA- A at home - ButtonA has been pressed for at least 50 ms!"
-          );
-          return;
-          // clearInterval(chkButtonA);
-        }
-        return;
-      }
-    }, 100); // Check if the buttonAPressed variable is true every 100 milliseconds.
-
-    buttonXstart.on("down", () => {
-      if (ignoreFalse === 0) {
-        board.digitalWrite(pinEnableWelding, 0); // Stop welding
-        console.log("buttonXstart- X at home");
-        motors(3);
-        return;
-      }
-    });
-
-    buttonZstart.on("down", () => {
+  buttonZstart.on("down", () => {
+    if (ignoreFalseZ === 0) {
       board.digitalWrite(pinEnableWelding, 0); // Stop welding
       console.log("buttonZstart- Z at home");
       motors(4);
-      return;
-    });
-
-    // buttonXmiddle.on("down", function (value) {
-    //   led.stop().off();
-    //   board.digitalWrite(pinEnableWelding, 0); // Stop welding
-    //   board.digitalWrite(pinEnableX, 0); // Stop motors StepperX
-    //   console.log("buttonXmiddle - X at home");
-    // });
-
-    // buttonXend.on("down", function (value) {
-    //   led.stop().off();
-    //   board.digitalWrite(pinEnableWelding, 0); // Stop welding
-    //   board.digitalWrite(pinEnableX, 0); // Stop motors StepperX
-    //   console.log("buttonXend - X at home");
-    // });
-
-    // buttonZend.on("down", function (value) {
-    //   led.stop().off();
-    //   board.digitalWrite(pinEnableWelding, 0); // Stop welding
-    //   board.digitalWrite(pinEnableZ, 0); // Stop motors StepperZ
-    //   console.log("buttonZend - Z at home");
-    // });
+    }
   });
-  console.log("Hello ArduinoJS");
-  firstConnection = 0;
-}
+
+  buttonA.on("down", () => {
+    if (ignoreFalseA === 0) {
+      board.digitalWrite(pinEnableWelding, 0); // Stop welding
+      console.log("buttonA- A at home");
+      motors(5);
+    }
+  });
+  // buttonXmiddle.on("down", function (value) {
+  //   led.stop().off();
+  //   board.digitalWrite(pinEnableWelding, 0); // Stop welding
+  //   board.digitalWrite(pinEnableX, 0); // Stop motors StepperX
+  //   console.log("buttonXmiddle - X at home");
+  // });
+
+  // buttonXend.on("down", function (value) {
+  //   led.stop().off();
+  //   board.digitalWrite(pinEnableWelding, 0); // Stop welding
+  //   board.digitalWrite(pinEnableX, 0); // Stop motors StepperX
+  //   console.log("buttonXend - X at home");
+  // });
+
+  // buttonZend.on("down", function (value) {
+  //   led.stop().off();
+  //   board.digitalWrite(pinEnableWelding, 0); // Stop welding
+  //   board.digitalWrite(pinEnableZ, 0); // Stop motors StepperZ
+  //   console.log("buttonZend - Z at home");
+  // });
+});
 
 ///////////////////////////////////////////////////////////////
 io.on("connection", (socket) => {
@@ -198,16 +231,16 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("user disconnected");
+    motors(0);
   });
+  // Stop welding
   socket.on("stop", (data) => {
-    screwType = `${data.screwType}x${data.screwLength}`;
-    // Emit a message to the client
-    socket.emit("message", "Stop (from server)");
-    // Start welding
-    msg = motors(0);
-    console.log(msg);
+    // screwType = `${data.screwType}x${data.screwLength}`;
+    socket.emit("message1", "Stopped!"); // Emit a message to the client
+    socket.emit("message2", "To continue, press Home Position"); // Emit a message to the client
+    motors(0);
   });
-  // get screw type status from client / front
+  // Start welding and motors
   socket.on("start", (data) => {
     screwType = `${data.screwType}x${data.screwLength}`;
     stepsX1 = stepsRevX * data.revX1;
@@ -225,239 +258,314 @@ io.on("connection", (socket) => {
     stepsX5 = stepsRevX * data.revX5;
     stepsZ5 = stepsRevZ * data.revZ5;
     stepsA5 = stepsRevA * data.revA5;
+    speedZ1 = data.speedZ1;
+    speedZ2 = data.speedZ2;
+    speedZ3 = data.speedZ3;
+    speedZ4 = data.speedZ4;
+    speedZ5 = data.speedZ5;
+    speedX = data.speedX;
+    speedA = data.speedA;
     stepsXstartPoint = stepsRevX * data.revXstartPoint;
     stepsZstartPoint = stepsRevZ * data.revZstartPoint;
-    stepsAstartPoint = stepsRevA * data.revAstartPoint;
+    // stepsAstartPoint = stepsRevA * data.revAstartPoint;
     maxRevbackHomeX =
       stepsXstartPoint + stepsRevX * 0.5 + stepsRevX * data.TotalRevX;
     maxRevbackHomeZ =
       stepsZstartPoint - stepsRevZ * data.TotalRevZ + stepsRevZ * 2;
-    // Emit a message to the client
-    socket.emit("message", "Start (from server)");
-    // Start welding and motors
-    msg = motors(1);
-    console.log(msg);
+    socket.emit("message1", `Screw ${data.screwType}x${data.screwLength}`); // Emit a message to the client
+    socket.emit("message2", "Starting..."); // Emit a message to the client
+    motors(1);
   });
+  // Go to home position
   socket.on("home", (data) => {
-    socket.emit("message", "Go to home position (from server)");
-    // Go to home position
-    msg = motors(2);
-    console.log(msg);
-    socket.emit("message", msg);
+    socket.emit("message1", "Go to Home Position...");
+    socket.emit("message2", "Verify Home Position");
+    motors(2);
+  });
+  //
+  socket.on("WeldingAndGasPause", (data) => {
+    socket.emit("message1", "Welding and Gas are Paused"); // Emit a message to the client
+    motorsManual(-3);
+  });
+  // Stop only Z
+  socket.on("ManuelStopZ", (data) => {
+    socket.emit("message1", "Stopped Z!"); // Emit a message to the client
+    motorsManual(-2);
+  });
+  // Stop only A
+  socket.on("ManuelStopA", (data) => {
+    socket.emit("message1", "Stopped A!"); // Emit a message to the client
+    motorsManual(-1);
+  });
+  // Stop only X
+  socket.on("ManuelStopX", (data) => {
+    socket.emit("message1", "Stopped X!"); // Emit a message to the client
+    motorsManual(0);
+  });
+  // Enable/Disable Welding + Gas (Safety)
+  socket.on("WeldOnOff", (data) => {
+    enableWeldingAndGas = data.enableWelding;
+    console.log(`Welding & Gas are ${enableWeldingAndGas}`);
+  });
+  // Move X +
+  socket.on("X+", (data) => {
+    speedX = data.speedX;
+    socket.emit("message1", "Moving X+!"); // Emit a message to the client
+    motorsManual(1);
+  });
+  // Move X -
+  socket.on("X-", (data) => {
+    speedX = data.speedX;
+    socket.emit("message1", "Moving X-!"); // Emit a message to the client
+    motorsManual(2);
+  });
+  // Move A CW
+  socket.on("Acw", (data) => {
+    speedA = data.speedA;
+    socket.emit("message1", "Moving A CW!"); // Emit a message to the client
+    motorsManual(3);
+  });
+  // Move A CCW
+  socket.on("Accw", (data) => {
+    speedA = data.speedA;
+    socket.emit("message1", "Moving A CCW!"); // Emit a message to the client
+    motorsManual(4);
+  });
+  // Move Z +
+  socket.on("Z+", (data) => {
+    socket.emit("message1", "Moving Z+!"); // Emit a message to the client
+    motorsManual(5);
+  });
+  // Move Z -
+  socket.on("Z-", (data) => {
+    socket.emit("message1", "Moving Z-!"); // Emit a message to the client
+    motorsManual(6);
+  });
+  // Start welding and gas
+  socket.on("WeldAndGas", (data) => {
+    socket.emit("message1", "Welding and Gas are Actived!"); // Emit a message to the client
+    motorsManual(7);
   });
 });
 
+// For Auto mode, Stop and Home
 function motors(onOffHome) {
   if (board.isReady) {
-    // Stop all motoros
+    // Stop all motors
     if (onOffHome === 0) {
       board.digitalWrite(pinEnableWelding, 0); // Stop welding
       board.digitalWrite(pinEnableGas, 0); // Stop welding
       board.digitalWrite(pinEnableA, 0); // Stop motors StepperA
       board.digitalWrite(pinEnableZ, 0); // Stop motors StepperZ
       board.digitalWrite(pinEnableX, 0); // Stop motors StepperX
-      ignoreFalse = 0;
-      led.stop().off();
-      return "Stop (from function)";
+      console.log("Stop (from function)");
+      return;
     }
     // Start Welding
     if (onOffHome === 1) {
       board.digitalWrite(pinEnableWelding, 0); // Disaable welding
+      board.digitalWrite(pinEnableGas, 0); // Start welding
       board.digitalWrite(pinEnableA, 1); // Enable motors StepperA
       board.digitalWrite(pinEnableZ, 1); // Enable motors StepperZ
       board.digitalWrite(pinEnableX, 1); // Enable motors StepperX
-      led.on();
-      // Start movinig stage 0 - go to Start Point
+      led.blink(500);
+      ignoreFalseX = 1; // Turn off the first switch of X axis while moves
+      ignoreFalseZ = 1; // Turn off the first switch of Z axis while moves
+      ignoreFalseA = 1; // Turn off the switch of A axis while moves
+      // Start moving stage 0 - go to Start Point
       stepperX.step(
         {
           steps: stepsXstartPoint,
           speed: speedToStartPoint,
+          accel: accelAll,
           direction: Stepper.DIRECTION.CCW,
         },
         () => {
-          ignoreFalse = 1;
           console.log(`Ready ${screwType} X0-Axis`);
           stepperZ.step(
             {
               steps: stepsZstartPoint,
               speed: speedToStartPoint,
+              accel: accelAll,
               direction: Stepper.DIRECTION.CW,
             },
             () => {
               console.log(`Ready ${screwType} Z0-Axis`);
-              stepperA.step(
+              console.log(`Ready ${screwType} A0-Axis`);
+              // stepperA.step(
+              //   {
+              //     steps: stepsAstartPoint,
+              //     speed: speedToStartPoint,
+              //     direction: Stepper.DIRECTION.CW,
+              //   },
+              //   () => {
+              console.log(`Start ${screwType}`);
+              // Start moving stage 1
+              board.digitalWrite(pinEnableWelding, 1); // Start welding
+              board.digitalWrite(pinEnableGas, 1); // Start welding
+              stepperX.step(
                 {
-                  steps: stepsAstartPoint,
-                  speed: speedToStartPoint,
-                  direction: Stepper.DIRECTION.CW,
+                  steps: stepsX1,
+                  speed: speedX,
+                  direction: Stepper.DIRECTION.CCW,
                 },
                 () => {
-                  console.log(`Ready ${screwType} A0-Axis`);
-                  console.log(`Start ${screwType}`);
-                  // Start movinig stage 1
-                  board.digitalWrite(pinEnableWelding, 1); // Start welding
-                  board.digitalWrite(pinEnableGas, 1); // Start welding
+                  console.log(`Done ${screwType} X1-Axis`);
+                  return;
+                }
+              );
+              stepperZ.step(
+                {
+                  steps: stepsZ1,
+                  speed: speedZ1,
+                  direction: Stepper.DIRECTION.CCW,
+                },
+                () => {
+                  console.log(`Done ${screwType} Z1-Axis`);
+                  return;
+                }
+              );
+              stepperA.step(
+                {
+                  steps: stepsA1,
+                  speed: speedA,
+                  direction: Stepper.DIRECTION.CCW,
+                },
+                () => {
+                  console.log(`Done ${screwType} A1-Axis`);
+                  // Start moving stage 2
                   stepperX.step(
                     {
-                      steps: stepsX1,
+                      steps: stepsX2,
                       speed: speedX,
                       direction: Stepper.DIRECTION.CCW,
                     },
                     () => {
-                      console.log(`Done ${screwType} X1-Axis`);
+                      console.log(`Done ${screwType} X2-Axis`);
                       return;
                     }
                   );
                   stepperZ.step(
                     {
-                      steps: stepsZ1,
-                      speed: speedZ,
+                      steps: stepsZ2,
+                      speed: speedZ2,
                       direction: Stepper.DIRECTION.CCW,
                     },
                     () => {
-                      console.log(`Done ${screwType} Z1-Axis`);
+                      console.log(`Done ${screwType} Z2-Axis`);
                       return;
                     }
                   );
                   stepperA.step(
                     {
-                      steps: stepsA1,
+                      steps: stepsA2,
                       speed: speedA,
-                      direction: Stepper.DIRECTION.CW,
+                      direction: Stepper.DIRECTION.CCW,
                     },
                     () => {
-                      console.log(`Done ${screwType} A1-Axis`);
-                      // Start movinig stage 2
+                      console.log(`Done ${screwType} A2-Axis`);
+                      // Start movinig stage 3
                       stepperX.step(
                         {
-                          steps: stepsX2,
+                          steps: stepsX3,
                           speed: speedX,
                           direction: Stepper.DIRECTION.CCW,
                         },
                         () => {
-                          console.log(`Done ${screwType} X2-Axis`);
+                          console.log(`Done ${screwType} X3-Axis`);
                           return;
                         }
                       );
                       stepperZ.step(
                         {
-                          steps: stepsZ2,
-                          speed: speedZ,
+                          steps: stepsZ3,
+                          speed: speedZ3,
                           direction: Stepper.DIRECTION.CCW,
                         },
                         () => {
-                          console.log(`Done ${screwType} Z2-Axis`);
+                          console.log(`Done ${screwType} Z3-Axis`);
                           return;
                         }
                       );
                       stepperA.step(
                         {
-                          steps: stepsA2,
+                          steps: stepsA3,
                           speed: speedA,
-                          direction: Stepper.DIRECTION.CW,
+                          direction: Stepper.DIRECTION.CCW,
                         },
                         () => {
-                          console.log(`Done ${screwType} A2-Axis`);
-                          // Start movinig stage 3
+                          console.log(`Done ${screwType} A3-Axis`);
+                          // Start moving stage 4
                           stepperX.step(
                             {
-                              steps: stepsX3,
+                              steps: stepsX4,
                               speed: speedX,
                               direction: Stepper.DIRECTION.CCW,
                             },
                             () => {
-                              console.log(`Done ${screwType} X3-Axis`);
+                              console.log(`Done ${screwType} X4-Axis`);
                               return;
                             }
                           );
                           stepperZ.step(
                             {
-                              steps: stepsZ3,
-                              speed: speedZ,
+                              steps: stepsZ4,
+                              speed: speedZ4,
                               direction: Stepper.DIRECTION.CCW,
                             },
                             () => {
-                              console.log(`Done ${screwType} Z3-Axis`);
+                              console.log(`Done ${screwType} Z4-Axis`);
                               return;
                             }
                           );
                           stepperA.step(
                             {
-                              steps: stepsA3,
+                              steps: stepsA4,
                               speed: speedA,
-                              direction: Stepper.DIRECTION.CW,
+                              direction: Stepper.DIRECTION.CCW,
                             },
                             () => {
-                              console.log(`Done ${screwType} A3-Axis`);
-                              // Start movinig stage 4
+                              console.log(`Done ${screwType} A4-Axis`);
+                              // Start moving stage 5
                               stepperX.step(
                                 {
-                                  steps: stepsX4,
+                                  steps: stepsX5,
                                   speed: speedX,
                                   direction: Stepper.DIRECTION.CCW,
                                 },
                                 () => {
-                                  console.log(`Done ${screwType} X4-Axis`);
+                                  console.log(`Done ${screwType} X5-Axis`);
                                   return;
                                 }
                               );
                               stepperZ.step(
                                 {
-                                  steps: stepsZ4,
-                                  speed: speedZ,
+                                  steps: stepsZ5,
+                                  speed: speedZ5,
                                   direction: Stepper.DIRECTION.CCW,
                                 },
                                 () => {
-                                  console.log(`Done ${screwType} Z4-Axis`);
+                                  console.log(`Done ${screwType} Z5-Axis`);
                                   return;
                                 }
                               );
                               stepperA.step(
                                 {
-                                  steps: stepsA4,
+                                  steps: stepsA5,
                                   speed: speedA,
-                                  direction: Stepper.DIRECTION.CW,
+                                  direction: Stepper.DIRECTION.CCW,
                                 },
                                 () => {
-                                  console.log(`Done ${screwType} A4-Axis`);
-                                  // Start movinig stage 5
-                                  stepperX.step(
-                                    {
-                                      steps: stepsX5,
-                                      speed: speedX,
-                                      direction: Stepper.DIRECTION.CCW,
-                                    },
-                                    () => {
-                                      console.log(`Done ${screwType} X5-Axis`);
-                                      return;
-                                    }
-                                  );
-                                  stepperZ.step(
-                                    {
-                                      steps: stepsZ5,
-                                      speed: speedZ,
-                                      direction: Stepper.DIRECTION.CCW,
-                                    },
-                                    () => {
-                                      console.log(`Done ${screwType} Z5-Axis`);
-                                      return;
-                                    }
-                                  );
-                                  stepperA.step(
-                                    {
-                                      steps: stepsA5,
-                                      speed: speedA,
-                                      direction: Stepper.DIRECTION.CW,
-                                    },
-                                    () => {
-                                      board.digitalWrite(pinEnableWelding, 0); // Disaable welding
-                                      console.log(`Done ${screwType} A5-Axis`);
-                                      console.log(`Finish ${screwType}`);
-                                      motors(2);
-                                      ignoreFalse = 0;
-                                      return `Finish ${screwType} (from server)`;
-                                    }
-                                  );
+                                  board.digitalWrite(pinEnableWelding, 0); // Disaable welding
+                                  console.log(`Done ${screwType} A5-Axis`);
+                                  motors(2);
+                                  ignoreFalseX = 0;
+                                  ignoreFalseZ = 0;
+                                  ignoreFalseA = 0;
+                                  PreventFalseX = setInterval(() => {
+                                    clearInterval(PreventFalseX);
+                                    motors(2);
+                                  }, 4000);
                                   return;
                                 }
                               );
@@ -473,13 +581,17 @@ function motors(onOffHome) {
                   return;
                 }
               );
+              //     return;
+              //   }
+              // );
               return;
             }
           );
           return;
         }
       );
-      return `Start All-Axis (from function)`;
+      console.log(`Start All-Axis (from function)`);
+      return;
     }
     ///////////////////////////////////////////////////////////////
     // All motors home
@@ -491,119 +603,302 @@ function motors(onOffHome) {
       board.digitalWrite(pinEnableX, 1); // Enable motors StepperX
       led.blink(100);
 
+      ignoreFalseX = 0;
+      ignoreFalseZ = 0;
+      ignoreFalseA = 0;
+
+      stepperX.step(
+        {
+          steps: 1,
+          speed: 3000,
+          direction: Stepper.DIRECTION.CCW,
+        },
+        () => {
+          console.log("Real Stop X!");
+        }
+      );
+      stepperZ.step(
+        {
+          steps: 1,
+          speed: 3000,
+          direction: Stepper.DIRECTION.CW,
+        },
+        () => {
+          console.log("Real Stop Z!");
+        }
+      );
+      stepperA.step(
+        {
+          steps: 1,
+          speed: 3000,
+          direction: Stepper.DIRECTION.CW,
+        },
+        () => {
+          console.log("Real Stop A!");
+        }
+      );
+
       stepperX.step(
         {
           steps: maxRevbackHomeX * stepsRevX,
-          speed: 2000,
+          speed: 3000,
           direction: Stepper.DIRECTION.CW,
         },
         () => {
           console.log(`X-Axis at HOME`);
-          return;
         }
       );
       stepperZ.step(
         {
           steps: maxRevbackHomeZ * stepsRevZ,
-          speed: 2000,
+          speed: 3000,
           direction: Stepper.DIRECTION.CCW,
         },
         () => {
           console.log(`Z-Axis at HOME`);
-          return;
         }
       );
       stepperA.step(
         {
-          steps: stepsRevA * 2,
-          speed: 2000,
-          direction: Stepper.DIRECTION.CW,
-        },
-        () => {
-          console.log(`A-Axis at HOME`);
-          console.log(`Welcome HOME`);
-          led.fadeOut();
-          return;
-        }
-      );
-      return "Home (from function)";
-    }
-    // move faw steps from X limit switche
-    if (onOffHome === 3) {
-      board.digitalWrite(pinEnableWelding, 0); // Stop welding
-      board.digitalWrite(pinEnableGas, 0); // Stop welding
-      led.blink(10);
-
-      stepperX.step(
-        {
-          steps: stepsRevX * 0.5,
+          steps: stepsRevA,
           speed: 3000,
           direction: Stepper.DIRECTION.CCW,
         },
         () => {
-          // console.log(`X-Axis at safe position`);
-          led.stop().off();
-          board.digitalWrite(pinEnableWelding, 0); // Stop welding
-          board.digitalWrite(pinEnableGas, 0); // Stop welding
-          board.digitalWrite(pinEnableA, 0); // Enable motors StepperA
-          board.digitalWrite(pinEnableX, 0); // Enable motors StepperX
-          console.log(`X-Axis at safe position`);
-          return;
+          console.log(`A-Axis wait to HOME`);
         }
       );
-      // stepperA.step(
-      //   {
-      //     steps: stepsRevA * 20,
-      //     speed: 3000,
-      //     direction: Stepper.DIRECTION.CCW,
-      //   },
-      //   () => {
-      //     console.log(`A-Axis at HOME`);
-      //     console.log(`Welcome HOME`);
-      //     led.fadeOut();
-      //   }
-      // );
+      console.log("Home (from function)");
       return;
     }
-    // move faw steps from Z limit switche
+    // move few steps from X limit switch
+    if (onOffHome === 3) {
+      board.digitalWrite(pinEnableWelding, 0); // Stop welding
+      board.digitalWrite(pinEnableGas, 0); // Stop welding
+      led.blink(50);
+
+      stepperX.step(
+        {
+          steps: 0.05,
+          speed: 3000,
+          direction: Stepper.DIRECTION.CCW,
+        },
+        () => {
+          console.log("Real Stop X - 2!");
+          stepperX.step(
+            {
+              steps: stepsRevX * 0.5,
+              speed: 3000,
+              direction: Stepper.DIRECTION.CCW,
+            },
+            () => {
+              board.digitalWrite(pinEnableX, 0); // Enable motors StepperX
+              led.fadeIn();
+              console.log(`X-Axis at safe position`);
+              return;
+            }
+          );
+        }
+      );
+      return;
+    }
+    // move few steps from Z limit switch
     if (onOffHome === 4) {
       board.digitalWrite(pinEnableWelding, 0); // Stop welding
       board.digitalWrite(pinEnableGas, 0); // Stop welding
-      led.blink(10);
+      led.blink(50);
 
       stepperZ.step(
         {
-          steps: stepsRevZ * 1,
+          steps: 0.1,
           speed: 3000,
           direction: Stepper.DIRECTION.CW,
         },
         () => {
-          // console.log(`Z-Axis at safe position`);
-          led.stop().off();
-          board.digitalWrite(pinEnableWelding, 0); // Stop welding
-          board.digitalWrite(pinEnableA, 0); // Enable motors StepperA
-          board.digitalWrite(pinEnableZ, 0); // Enable motors StepperZ
-          console.log(`Z-Axis at safe position`);
-          return;
+          console.log("Real Stop Z - 2!");
+          stepperZ.step(
+            {
+              steps: stepsRevZ * 1,
+              speed: 3000,
+              direction: Stepper.DIRECTION.CW,
+            },
+            () => {
+              board.digitalWrite(pinEnableZ, 0); // Enable motors StepperZ
+              led.fadeIn();
+              console.log(`Z-Axis at safe position`);
+              return;
+            }
+          );
         }
       );
-      // stepperA.step(
-      //   {
-      //     steps: stepsRevA * 20,
-      //     speed: 3000,
-      //     direction: Stepper.DIRECTION.CCW,
-      //   },
-      //   () => {
-      //     console.log(`A-Axis at HOME`);
-      //     console.log(`Welcome HOME`);
-      //     led.fadeOut();
-      //   }
-      // );
       return;
     }
-    return;
+    // move few steps from A limit switch
+    if (onOffHome === 5) {
+      board.digitalWrite(pinEnableWelding, 0); // Stop welding
+      board.digitalWrite(pinEnableGas, 0); // Stop welding
+      led.blink(50);
+      stepperA.step(
+        {
+          steps: 0.1,
+          speed: 3000,
+          direction: Stepper.DIRECTION.CW,
+        },
+        () => {
+          console.log("Real Stop A - 2!");
+          stepperA.step(
+            {
+              steps: stepsRevA * 0.1,
+              speed: 3000,
+              direction: Stepper.DIRECTION.CW,
+            },
+            () => {
+              board.digitalWrite(pinEnableA, 1); // Enable motors StepperZ
+              led.fadeIn();
+              console.log(`A-Axis at safe position`);
+              return;
+            }
+          );
+        }
+      );
+      return;
+    }
   }
-  return;
+}
+// For Manual Mode
+function motorsManual(ControledMove) {
+  if (board.isReady) {
+    // ignoreFalseX = 1; // Turn off the first switch of X axis while moves
+    // ignoreFalseZ = 1; // Turn off the first switch of Z axis while moves
+    ignoreFalseA = 1; // Turn off the switch of A axis while moves
+    if (enableWeldingAndGas === 1) {
+      board.digitalWrite(pinEnableWelding, 1); // Enable welding
+      board.digitalWrite(pinEnableGas, 1); // Enable Gas
+    } else {
+      board.digitalWrite(pinEnableWelding, 0); // Disable welding
+      board.digitalWrite(pinEnableGas, 0); // Disable Gas
+    }
+    if (ControledMove === -3) {
+      board.digitalWrite(pinEnableWelding, 0); // Enable welding
+      board.digitalWrite(pinEnableGas, 0); // Enable Gas
+      return;
+    }
+    if (ControledMove === -2) {
+      if (enableWeldingAndGas === 1) {
+        board.digitalWrite(pinEnableWelding, 1); // Enable welding
+        board.digitalWrite(pinEnableGas, 1); // Enable Gas
+      }
+      board.digitalWrite(pinEnableZ, 0); // Stop motors StepperX
+      return;
+    }
+    if (ControledMove === -1) {
+      if (enableWeldingAndGas === 1) {
+        board.digitalWrite(pinEnableWelding, 1); // Enable welding
+        board.digitalWrite(pinEnableGas, 1); // Enable Gas
+      }
+      board.digitalWrite(pinEnableA, 0); // Stop motors StepperX
+      return;
+    }
+    if (ControledMove === 0) {
+      if (enableWeldingAndGas === 1) {
+        board.digitalWrite(pinEnableWelding, 1); // Enable welding
+        board.digitalWrite(pinEnableGas, 1); // Enable Gas
+      }
+      board.digitalWrite(pinEnableX, 0); // Stop motors StepperX
+      return;
+    }
+    if (ControledMove === 1) {
+      board.digitalWrite(pinEnableX, 1); // Stop motors StepperX
+      stepperX.step(
+        {
+          steps: 100000000,
+          speed: speedX,
+          accel: accelAll,
+          direction: Stepper.DIRECTION.CCW,
+        },
+        () => {}
+      );
+      return;
+    }
+    if (ControledMove === 2) {
+      board.digitalWrite(pinEnableX, 1); // Stop motors StepperX
+      stepperX.step(
+        {
+          steps: 100000000,
+          speed: speedX,
+          accel: accelAll,
+          direction: Stepper.DIRECTION.CW,
+        },
+        () => {}
+      );
+      return;
+    }
+    if (ControledMove === 3) {
+      board.digitalWrite(pinEnableA, 1); // Stop motors StepperX
+      stepperA.step(
+        {
+          steps: 100000000,
+          speed: speedA,
+          accel: accelAll,
+          direction: Stepper.DIRECTION.CW,
+        },
+        () => {}
+      );
+      return;
+    }
+    if (ControledMove === 4) {
+      board.digitalWrite(pinEnableA, 1); // Stop motors StepperX
+      stepperA.step(
+        {
+          steps: 100000000,
+          speed: speedA,
+          accel: accelAll,
+          direction: Stepper.DIRECTION.CCW,
+        },
+        () => {}
+      );
+      return;
+    }
+    if (ControledMove === 5) {
+      board.digitalWrite(pinEnableZ, 1); // Stop motors StepperX
+      stepperZ.step(
+        {
+          steps: 100000000,
+          speed: 500,
+          accel: accelAll,
+          direction: Stepper.DIRECTION.CW,
+        },
+        () => {}
+      );
+      return;
+    }
+    if (ControledMove === 6) {
+      board.digitalWrite(pinEnableZ, 1); // Stop motors StepperX
+      stepperZ.step(
+        {
+          steps: 100000000,
+          speed: 500,
+          accel: accelAll,
+          direction: Stepper.DIRECTION.CCW,
+        },
+        () => {}
+      );
+      return;
+    }
+    if (ControledMove === 7) {
+      ignoreFalseX = 1; // Turn off the first switch of X axis while moves
+      ignoreFalseZ = 1; // Turn off the first switch of Z axis while moves
+      ignoreFalseA = 1; // Turn off the switch of A axis while moves
+      if (enableWeldingAndGas === 1) {
+        board.digitalWrite(pinEnableWelding, 1); // Enable welding
+        board.digitalWrite(pinEnableGas, 1); // Enable Gas
+      } else {
+        board.digitalWrite(pinEnableWelding, 0); // Disable welding
+        board.digitalWrite(pinEnableGas, 0); // Disable Gas
+      }
+      return;
+    }
+  }
 }
 
 ///////////////////////////////////////////////////////////////
@@ -614,6 +909,20 @@ app.use(favicon(__dirname + "/img/favicon.png"));
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/AllScrewsTypes.html");
 });
+//Maual
+//Pedical
+app.get("/Pedical", (req, res) => {
+  res.sendFile(__dirname + "/ScrewTypes/Pedical.html");
+});
+//Leg
+app.get("/Leg", (req, res) => {
+  res.sendFile(__dirname + "/ScrewTypes/Leg.html");
+});
+//Welding and Gas
+app.get("/WeldingandGas", (req, res) => {
+  res.sendFile(__dirname + "/ScrewTypes/WeldingAndGas.html");
+});
+//Auto
 //FIVE
 app.get("/Five", (req, res) => {
   res.sendFile(__dirname + "/ScrewTypes/Five.html");

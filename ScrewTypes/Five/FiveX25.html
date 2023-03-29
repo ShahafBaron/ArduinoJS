@@ -31,22 +31,41 @@
         id="home"
         type="button"
         class="btn btn-secondary btn-lg col-8 mb-2"
+        style="visibility: visiable"
       >
         Home Position
       </button>
-      <div class="card text-white bg-dark col-8 mb-2 ">
+      <div class="card text-white bg-dark col-8 mb-2">
         <h4 class="card-header text-success">Monitor</h4>
         <div class="card-body">
-          <p class="card-text" id="monitor" style="color: #45ff00; font-size: 25px;"></p>
-          <p class="card-text" id="monitor2" style="color: #45ff00 ; font-size: 25px;"></p>
+          <p
+            class="card-text"
+            id="monitor1"
+            style="color: #45ff00; font-size: 25px"
+          ></p>
+          <p
+            class="card-text"
+            id="monitor2"
+            style="color: #45ff00; font-size: 25px"
+          ></p>
         </div>
       </div>
 
-      <button id="start" type="button" class="btn btn-success btn-lg col-8 mb-2">
+      <button
+        id="start"
+        type="button"
+        class="btn btn-success btn-lg col-8 mb-2"
+        style="visibility: visible"
+      >
         Start
       </button>
-      <button id="stop" type="button" class="btn btn-danger btn-lg col-8">
-        Stop
+      <button
+        id="stop"
+        type="button"
+        class="btn btn-danger btn-lg col-8"
+        style="visibility: hidden"
+      >
+        Emergency Stop
       </button>
     </div>
 
@@ -73,16 +92,19 @@
       var socket = io();
       var type = 5;
       var length = 25;
-
+      var minutes;
+      var seconds;
+      var finishTimer;
       var intervalId;
 
-      document.getElementById("monitor").innerHTML =
+      document.getElementById("monitor1").innerHTML =
         "Hello, press 'Start' to start welding";
       document.getElementById("monitor2").innerHTML = `Screw ${type}x${length}`;
 
-      function startTimer() {
-        var minutes = 1;
-        var seconds = 28;
+      function startTimer(minutes, seconds) {
+        finishTimer = 0;
+        minutesConst = minutes;
+        secondsConst = seconds;
         intervalId = setInterval(function () {
           seconds--;
           if (seconds < 0) {
@@ -91,9 +113,38 @@
           }
           if (minutes < 0) {
             clearInterval(intervalId);
-            // alert("Time's up!");
-            seconds = 28;
-            minutes = 1;
+            //Make the buttons pressables and appear
+            document.getElementById("home").style.transform = "scale(1)";
+            document.getElementById("home").style.visibility = "visible";
+            document.getElementById("home").style.opacity = 0;
+            document.getElementById("start").style.transform = "scale(1)";
+            document.getElementById("start").style.visibility = "visible";
+            document.getElementById("start").style.opacity = 0;
+            document.getElementById("back").style.transform = "scale(1)";
+            document.getElementById("back").style.visibility = "visible";
+            document.getElementById("back").style.opacity = 0;
+            setTimeout(function () {
+              document.getElementById("back").style.transition =
+                "opacity 0.5s ease-in-out";
+              document.getElementById("back").style.opacity = 1;
+              document.getElementById("home").style.transition =
+                "opacity 1s ease-in-out";
+              document.getElementById("home").style.opacity = 1;
+              document.getElementById("start").style.transition =
+                "opacity 1.5s ease-in-out";
+              document.getElementById("start").style.opacity = 1;
+            }, 50);
+            //Disappear Stop button
+            document.getElementById("stop").style.transition =
+              "opacity 0.5s ease-in-out";
+            document.getElementById("stop").style.opacity = 0;
+            document.getElementById("stop").style.transform = "scale(0)";
+            $("#monitor1").text(`Press 'Start' to start welding`);
+            finishTimer = 1;
+          }
+          if (finishTimer) {
+            minutes = minutesConst;
+            seconds = secondsConst;
           }
           document.getElementById(
             "monitor2"
@@ -101,25 +152,61 @@
         }, 1000);
       }
 
-      // document.getElementById("start").addEventListener("click", startTimer);
-      // document.getElementById("stop").addEventListener("click", function() {
-      //   clearInterval(intervalId);
-      // });
-
       // Listen for messages from the server
-      socket.on("message", (message) => {
+      socket.on("message1", (message) => {
+        console.log(message); // "Hello from the server!"
+        document.getElementById("monitor1").innerHTML = message;
+      });
+      socket.on("message2", (message) => {
         console.log(message); // "Hello from the server!"
         document.getElementById("monitor2").innerHTML = message;
       });
+
+      function back() {
+        socket.emit("stop");
+        document.location.href = "http://localhost:3000/Five";
+      }
+
       $("#home").on("click", () => {
-        console.log(`Go to home position`);
-        $("#monitor").text(`Go to home position`);
         socket.emit("home");
+        //Appear Stop button
+        document.getElementById("stop").style.visibility = "visible";
+        document.getElementById("stop").style.opacity = 0;
+        setTimeout(function () {
+          document.getElementById("stop").style.transition =
+            "opacity 1s ease-in-out";
+          document.getElementById("stop").style.opacity = 1;
+        }, 50);
+        //Disappear Start button
+        document.getElementById("start").style.transition =
+          "opacity 1s ease-in-out";
+        document.getElementById("start").style.opacity = 0;
+        //Disappear Back button
+        document.getElementById("back").style.transition =
+          "opacity 1s ease-in-out";
+        document.getElementById("back").style.opacity = 0;
+        //Make the buttons pressables
+        document.getElementById("stop").style.transform = "scale(1)";
+        document.getElementById("back").style.transform = "scale(1)";
+        document.getElementById("start").style.transform = "scale(1)";
+        setTimeout(function () {
+          document.getElementById("start").style.transition =
+            "opacity 5s ease-in-out";
+          document.getElementById("start").style.opacity = 1;
+          document.getElementById("back").style.transition =
+            "opacity 5s ease-in-out";
+          document.getElementById("back").style.opacity = 1;
+          document.getElementById("stop").style.transition =
+            "transform 10s ease-in-out";
+          document.getElementById("stop").style.transform = "scale(0)";
+        }, 1000);
+        setTimeout(function () {
+          $("#monitor1").text(`Press 'Start' to start welding`);
+        }, 9000);
+        console.log(`Go to home position (front)`);
       });
+
       $("#start").on("click", () => {
-        startTimer();
-        console.log(`Start ${type}x${length}`);
-        $("#monitor").text(`Screw ${type}x${length}`);
         socket.emit("start", {
           screwType: type,
           screwLength: length,
@@ -138,24 +225,76 @@
           revA3: 1.136,
           revA4: 4.773,
           revA5: 1,
+          speedZ1: 8.8,
+          speedZ2: 8.8,
+          speedZ3: 8.8,
+          speedZ4: 8.8,
+          speedZ5: 8.8,
+          speedX: 56,
+          speedA: 100,
           revXstartPoint: 2,
           revAstartPoint: 0,
           revZstartPoint: 2,
           TotalRevX: 6.3,
           TotalRevZ: 0.7,
         });
+        startTimer(1, 36); // minutes, seconds
+        //Disappear Back button
+        document.getElementById("back").style.transition =
+          "opacity 0.5s ease-in-out";
+        document.getElementById("back").style.opacity = 0;
+        //Disappear Home button
+        document.getElementById("home").style.transition =
+          "opacity 1s ease-in-out";
+        document.getElementById("home").style.opacity = 0;
+        //Disappear Start button
+        document.getElementById("start").style.transition =
+          "opacity 1.5s ease-in-out";
+        document.getElementById("start").style.opacity = 0;
+        //Appear Stop button
+        document.getElementById("stop").style.visibility = "visible";
+        document.getElementById("stop").style.transform = "scale(0)";
+        setTimeout(function () {
+          document.getElementById("stop").style.opacity = 1;
+          document.getElementById("stop").style.transition =
+            "transform 1s ease-in-out";
+          document.getElementById("stop").style.transform = "scale(1)";
+          // Make the buttons unpressables
+          document.getElementById("back").style.transform = "scale(0)";
+          document.getElementById("home").style.transform = "scale(0)";
+          document.getElementById("start").style.transform = "scale(0)";
+        }, 1000);
+        console.log(`Start ${type}x${length} (front)`);
+        // $("#monitor").text(`Screw ${type}x${length}`);
       });
-      function back() {
-        document.location.href = "http://localhost:3000/Five";
-      }
+
       $("#stop").on("click", () => {
-        clearInterval(intervalId);
-        console.log(`Stop ${type}x${length}`);
-        $("#monitor").text(`Stop ${type}x${length}`);
         socket.emit("stop", {
           screwType: type,
           screwLength: length,
         });
+        // Make the buttom pressables
+        document.getElementById("home").style.transform = "scale(1)";
+        //Disappear Stop button
+        document.getElementById("stop").style.transition =
+          "opacity 0.5s ease-in-out";
+        document.getElementById("stop").style.opacity = 0;
+        document.getElementById("home").style.visibility = "visible";
+        document.getElementById("home").style.opacity = 0;
+        setTimeout(function () {
+          document.getElementById("home").style.transition =
+            "opacity 0.5s ease-in-out";
+          document.getElementById("home").style.opacity = 1;
+          // Make the buttoמ unpressables
+          document.getElementById("stop").style.transform = "scale(0)";
+          document.getElementById("back").style.transform = "scale(0)";
+        }, 100);
+        document.getElementById("start").style.transition =
+          "opacity 1s ease-in-out";
+        document.getElementById("start").style.opacity = 0;
+        clearInterval(intervalId);
+        console.log(`Stop ${type}x${length} (front)`);
+        // $("#monitor").text(`Stop ${type}x${length}`);
       });
     </script>
   </body>

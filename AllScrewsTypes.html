@@ -13,7 +13,7 @@
       src="https://kit.fontawesome.com/e80947895c.js"
       crossorigin="anonymous"
     ></script>
-    <title>Choose your screw type</title>
+    <title>Choose Auto or Manual</title>
   </head>
 
   <script
@@ -32,16 +32,16 @@
     crossorigin="anonymous"
   ></script>
   <!-- important!! include socket.io client side script -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script> -->
   <script>
     function screwType(type, AndHalf) {
       document.location.href = `http://localhost:3000/${type}${AndHalf}`;
     }
-    function otherAndHalf(Length) {
-      document.location.href = "http://localhost:3000/Five";
-    }
+    // function otherAndHalf(Length) {
+    //   document.location.href = "http://localhost:3000/Five";
+    // }
     //load socket.io-client and connect to the host that serves the page
-    var socket = io();
+    // var socket = io();
   </script>
   <body class="bg-color">
     <style>
@@ -57,78 +57,129 @@
         background-color: #d2edec;
       }
     </style>
-    <div class="container d-flex flex-column align-items-center">
-      <h4 class="text-center">Welcome to the LaserWelding Machine :)</h4>
-      <div class="text-center">
-        <div class="col-50">
-          <div class="card">
-            <h4 class="card-header">
-              <i class="fas fa-cog"></i>&nbsp;&nbsp;5 Screws
-            </h4>
-            <div class="card-body">
-              <button
-                id="five"
-                class="btn btn-primary btn-lg"
-                onclick="screwType(`Five`, ``)"
-              >
-                5
-              </button>
+    <div class="container">
+      <div class="row">
+        <div class="col-6">
+          <!-- Left column for manual buttons -->
+          <h4 class="text-center">Manual</h4>
+          <div class="col">
+            <div class="card">
+              <h4 class="card-header">
+                <i class="fas fa-cog"></i>&nbsp;&nbsp;Pedical Screw
+              </h4>
+              <div class="card-body">
+                <button
+                  id="five"
+                  class="btn btn-primary btn-lg"
+                  onclick="screwType(`Pedical`, ``)"
+                >
+                  Pedical Screw
+                </button>
+              </div>
+            </div>
+            <div class="card">
+              <h4 class="card-header">
+                <i class="fas fa-cog"></i>&nbsp;&nbsp; Leg Screw
+              </h4>
+              <div class="card-body">
+                <button
+                  id="five"
+                  class="btn btn-primary btn-lg"
+                  onclick="screwType(`Leg`, ``)"
+                >
+                  Leg Screw
+                </button>
+              </div>
+            </div>
+            <div class="card">
+              <h4 class="card-header">
+                <i class="fas fa-cog"></i>&nbsp;&nbsp; Welding and Gas
+              </h4>
+              <div class="card-body">
+                <button
+                  id="five"
+                  class="btn btn-primary btn-lg"
+                  onclick="screwType(`WeldingAndGas`, ``)"
+                >
+                  Welding and Gas
+                </button>
+              </div>
             </div>
           </div>
-          <div class="card">
-            <h4 class="card-header">
-              <i class="fas fa-cog"></i>&nbsp;&nbsp;5.5 Screws
-            </h4>
-            <div class="card-body">
-              <button
-                id="fiveAndHalf"
-                class="btn btn-primary btn-lg"
-                onclick="screwType(`Five`, `AndHalf`)"
-              >
-                5.5
-              </button>
+        </div>
+        <div class="col-6">
+          <!-- Right column for screw size buttons -->
+          <h4 class="text-center">Auto</h4>
+          <div class="col">
+            <div class="card">
+              <h4 class="card-header">
+                <i class="fas fa-cog"></i>&nbsp;&nbsp;5 Screws
+              </h4>
+              <div class="card-body">
+                <button
+                  id="five"
+                  class="btn btn-primary btn-lg"
+                  onclick="screwType(`Five`, ``)"
+                >
+                  5
+                </button>
+              </div>
             </div>
-          </div>
-          <div class="card">
-            <h4 class="card-header">
-              <i class="fas fa-cog"></i>&nbsp;&nbsp;6.5 Screws
-            </h4>
-            <div class="card-body">
-              <button
-                id="sixAndHalf"
-                class="btn btn-primary btn-lg"
-                onclick="screwType(`Six`, `AndHalf`)"
-              >
-                6.5
-              </button>
+            <div class="card">
+              <h4 class="card-header">
+                <i class="fas fa-cog"></i>&nbsp;&nbsp;5.5 Screws
+              </h4>
+              <div class="card-body">
+                <button
+                  id="fiveAndHalf"
+                  class="btn btn-primary btn-lg"
+                  onclick="screwType(`Five`, `AndHalf`)"
+                >
+                  5.5
+                </button>
+              </div>
             </div>
-          </div>
-          <div class="card">
-            <h4 class="card-header">
-              <i class="fas fa-cog"></i>&nbsp;&nbsp;7.5 Screws
-            </h4>
-            <div class="card-body">
-              <button
-                id="sevenAndHalf"
-                class="btn btn-primary btn-lg"
-                onclick="screwType(`Seven`, `AndHalf`)"
-              >
-                7.5
-              </button>
+            <div class="card">
+              <h4 class="card-header">
+                <i class="fas fa-cog"></i>&nbsp;&nbsp;6.5 Screws
+              </h4>
+              <div class="card-body">
+                <button
+                  id="sixAndHalf"
+                  class="btn btn-primary btn-lg"
+                  onclick="screwType(`Six`, `AndHalf`)"
+                >
+                  6.5
+                </button>
+              </div>
             </div>
-          </div>
-          <div class="card">
-            <h4 class="card-header">
-              <i class="fas fa-cog"></i>&nbsp;&nbsp;8.5 Screws
-            </h4>
-            <div class="card-body">
-              <button
-                id="eightAndHalf"
-                class="btn btn-primary btn-lg"
-                onclick="screwType(`Eight`, `AndHalf`)"
-              >
-                8.5
-              </button>
+            <div class="card">
+              <h4 class="card-header">
+                <i class="fas fa-cog"></i>&nbsp;&nbsp;7.5 Screws
+              </h4>
+              <div class="card-body">
+                <button
+                  id="sevenAndHalf"
+                  class="btn btn-primary btn-lg"
+                  onclick="screwType(`Seven`, `AndHalf`)"
+                >
+                  7.5
+                </button>
+              </div>
+            </div>
+            <div class="card">
+              <h4 class="card-header">
+                <i class="fas fa-cog"></i>&nbsp;&nbsp;8.5 Screws
+              </h4>
+              <div class="card-body">
+                <button
+                  id="eightAndHalf"
+                  class="btn btn-primary btn-lg"
+                  onclick="screwType(`Eight`, `AndHalf`)"
+                >
+                  8.5
+                </button>
+              </div>
             </div>
           </div>
         </div>

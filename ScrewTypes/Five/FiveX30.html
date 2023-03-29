@@ -31,22 +31,41 @@
         id="home"
         type="button"
         class="btn btn-secondary btn-lg col-8 mb-2"
+        style="visibility: visiable"
       >
         Home Position
       </button>
-      <div class="card text-white bg-dark col-8 mb-2 ">
+      <div class="card text-white bg-dark col-8 mb-2">
         <h4 class="card-header text-success">Monitor</h4>
         <div class="card-body">
-          <p class="card-text" id="monitor" style="color: #45ff00; font-size: 25px;"></p>
-          <p class="card-text" id="monitor2" style="color: #45ff00 ; font-size: 25px;"></p>
+          <p
+            class="card-text"
+            id="monitor"
+            style="color: #45ff00; font-size: 25px"
+          ></p>
+          <p
+            class="card-text"
+            id="monitor2"
+            style="color: #45ff00; font-size: 25px"
+          ></p>
         </div>
       </div>
 
-      <button id="start" type="button" class="btn btn-success btn-lg col-8 mb-2">
+      <button
+        id="start"
+        type="button"
+        class="btn btn-success btn-lg col-8 mb-2"
+        style="visibility: visible"
+      >
         Start
       </button>
-      <button id="stop" type="button" class="btn btn-danger btn-lg col-8">
-        Stop
+      <button
+        id="stop"
+        type="button"
+        class="btn btn-danger btn-lg col-8"
+        style="visibility: hidden"
+      >
+        Emergency Stop
       </button>
     </div>
 
@@ -81,8 +100,8 @@
       document.getElementById("monitor2").innerHTML = `Screw ${type}x${length}`;
 
       function startTimer() {
-        var minutes = 1;
-        var seconds = 16;
+        var minutes = 0;
+        var seconds = 3;
         intervalId = setInterval(function () {
           seconds--;
           if (seconds < 0) {
@@ -92,8 +111,34 @@
           if (minutes < 0) {
             clearInterval(intervalId);
             // alert("Time's up!");
-            seconds = 16;
-            minutes = 1;
+            minutes = 0;
+            seconds = 3;
+            //Make the buttons pressables and appear
+            document.getElementById("home").style.transform = "scale(1)";
+            document.getElementById("home").style.visibility = "visible";
+            document.getElementById("home").style.opacity = 0;
+            document.getElementById("start").style.transform = "scale(1)";
+            document.getElementById("start").style.visibility = "visible";
+            document.getElementById("start").style.opacity = 0;
+            document.getElementById("back").style.transform = "scale(1)";
+            document.getElementById("back").style.visibility = "visible";
+            document.getElementById("back").style.opacity = 0;
+            setTimeout(function () {
+              document.getElementById("back").style.transition =
+                "opacity 0.5s ease-in-out";
+              document.getElementById("back").style.opacity = 1;
+              document.getElementById("home").style.transition =
+                "opacity 1s ease-in-out";
+              document.getElementById("home").style.opacity = 1;
+              document.getElementById("start").style.transition =
+                "opacity 1.5s ease-in-out";
+              document.getElementById("start").style.opacity = 1;
+            }, 50);
+            //Disappear Stop button
+            document.getElementById("stop").style.transition =
+              "opacity 0.5s ease-in-out";
+            document.getElementById("stop").style.opacity = 0;
+            document.getElementById("stop").style.transform = "scale(0)";
           }
           document.getElementById(
             "monitor2"
@@ -101,17 +146,84 @@
         }, 1000);
       }
 
+      // document.getElementById("start").addEventListener("click", startTimer);
+      // document.getElementById("stop").addEventListener("click", function() {
+      //   clearInterval(intervalId);
+      // });
+
       // Listen for messages from the server
       socket.on("message", (message) => {
         console.log(message); // "Hello from the server!"
         document.getElementById("monitor2").innerHTML = message;
       });
+
+      function back() {
+        document.location.href = "http://localhost:3000/Five";
+      }
+
       $("#home").on("click", () => {
+        //Appear Stop button
+        document.getElementById("stop").style.visibility = "visible";
+        document.getElementById("stop").style.opacity = 0;
+        setTimeout(function () {
+          document.getElementById("stop").style.transition =
+            "opacity 1s ease-in-out";
+          document.getElementById("stop").style.opacity = 1;
+        }, 50);
+        //Disappear Start button
+        document.getElementById("start").style.transition =
+          "opacity 1s ease-in-out";
+        document.getElementById("start").style.opacity = 0;
+        //Disappear Back button
+        document.getElementById("back").style.transition =
+          "opacity 1s ease-in-out";
+        document.getElementById("back").style.opacity = 0;
+        //Make the buttons pressables
+        document.getElementById("stop").style.transform = "scale(1)";
+        document.getElementById("back").style.transform = "scale(1)";
+        document.getElementById("start").style.transform = "scale(1)";
+        setTimeout(function () {
+          document.getElementById("start").style.transition =
+            "opacity 5s ease-in-out";
+          document.getElementById("start").style.opacity = 1;
+          document.getElementById("back").style.transition =
+            "opacity 5s ease-in-out";
+          document.getElementById("back").style.opacity = 1;
+          document.getElementById("stop").style.transition =
+            "transform 10s ease-in-out";
+          document.getElementById("stop").style.transform = "scale(0)";
+        }, 1000);
         console.log(`Go to home position`);
         $("#monitor").text(`Go to home position`);
         socket.emit("home");
       });
+
       $("#start").on("click", () => {
+        //Disappear Back button
+        document.getElementById("back").style.transition =
+          "opacity 0.5s ease-in-out";
+        document.getElementById("back").style.opacity = 0;
+        //Disappear Home button
+        document.getElementById("home").style.transition =
+          "opacity 1s ease-in-out";
+        document.getElementById("home").style.opacity = 0;
+        //Disappear Start button
+        document.getElementById("start").style.transition =
+          "opacity 1.5s ease-in-out";
+        document.getElementById("start").style.opacity = 0;
+        //Appear Stop button
+        document.getElementById("stop").style.visibility = "visible";
+        document.getElementById("stop").style.transform = "scale(0)";
+        setTimeout(function () {
+          document.getElementById("stop").style.opacity = 1;
+          document.getElementById("stop").style.transition =
+            "transform 1s ease-in-out";
+          document.getElementById("stop").style.transform = "scale(1)";
+          // Make the buttons unpressables
+          document.getElementById("back").style.transform = "scale(0)";
+          document.getElementById("home").style.transform = "scale(0)";
+          document.getElementById("start").style.transform = "scale(0)";
+        }, 1000);
         startTimer();
         console.log(`Start ${type}x${length}`);
         $("#monitor").text(`Screw ${type}x${length}`);
@@ -133,6 +245,11 @@
           revA3: 1.136,
           revA4: 4.773,
           revA5: 1,
+          speedZ1: 8.8,
+          speedZ2: 8.8,
+          speedZ3: 8.8,
+          speedZ4: 8.8,
+          speedZ5: 8.8,
           revXstartPoint: 2,
           revAstartPoint: 0,
           revZstartPoint: 2,
@@ -140,10 +257,26 @@
           TotalRevZ: 0.7,
         });
       });
-      function back() {
-        document.location.href = "http://localhost:3000/Five";
-      }
+
       $("#stop").on("click", () => {
+        // Make the buttom pressables
+        document.getElementById("home").style.transform = "scale(1)";
+        //Disappear Stop button
+        document.getElementById("stop").style.transition =
+          "opacity 0.5s ease-in-out";
+        document.getElementById("stop").style.opacity = 0;
+        document.getElementById("home").style.visibility = "visible";
+        document.getElementById("home").style.opacity = 0;
+        setTimeout(function () {
+          document.getElementById("home").style.transition =
+            "opacity 0.5s ease-in-out";
+          document.getElementById("home").style.opacity = 1;
+          // Make the buttoמ unpressables
+          document.getElementById("stop").style.transform = "scale(0)";
+        }, 100);
+        document.getElementById("start").style.transition =
+          "opacity 1s ease-in-out";
+        document.getElementById("start").style.opacity = 0;
         clearInterval(intervalId);
         console.log(`Stop ${type}x${length}`);
         $("#monitor").text(`Stop ${type}x${length}`);

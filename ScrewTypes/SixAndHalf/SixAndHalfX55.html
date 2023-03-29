@@ -128,28 +128,26 @@
         console.log(`Start ${type}x${length}`);
         $("#monitor").text(`Screw ${type}x${length}`);
         socket.emit("start", {
-          screwType: type,
-          screwLength: length,
-          revX1: 2.373 / 4,
-          revX2: 7.234 / 4,
-          revX3: 2.5 / 4,
-          revX4: 10.5 / 4,
-          revX5: 2.19 / 4,
-          revZ1: 0, // const
-          revZ2: 0.36 / 2,
-          revZ3: 0, // const
-          revZ4: 0.85 / 2,
-          revZ5: 0.178 / 2,
-          revA1: 1.079,
-          revA2: 3.287,
-          revA3: 1.136,
-          revA4: 4.773,
-          revA5: 1,
+          revX1: 0 / 4,
+          revX2: 1.1 / 4,
+          revX3: 8.8 / 4,
+          revX4: 31 / 4,
+          revX5: 15.6 / 4,
+          revZ1: 0, 
+          revZ2: 0.174 / 2,
+          revZ3: 0.369 / 2, 
+          revZ4: 0 ,
+          revZ5: 1.228 / 2,
+          revA1: 0,
+          revA2: 0.5,
+          revA3: 4,
+          revA4: 14.09,
+          revA5: 7.091,
           revXstartPoint: 2,
           revAstartPoint: 0,
           revZstartPoint: 2,
-          TotalRevX: 6.3,
-          TotalRevZ: 0.7,
+          TotalRevX: 25.7,
+          TotalRevZ: 1.8,
         });
       });
       function back() {

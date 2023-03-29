@@ -13,7 +13,20 @@
       src="https://kit.fontawesome.com/e80947895c.js"
       crossorigin="anonymous"
     ></script>
-    <title>Screw 5.3x40</title>
+    <script
+      src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+      integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+      integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- important!! include socket.io client side script -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
+    <title>Screw 5.5x40</title>
   </head>
   <body>
     <div class="container d-flex flex-column align-items-center">
@@ -31,58 +44,72 @@
         id="home"
         type="button"
         class="btn btn-secondary btn-lg col-8 mb-2"
+        style="visibility: visiable"
       >
         Home Position
       </button>
-      <div class="card text-white bg-dark col-8 mb-2 ">
+      <div class="card text-white bg-dark col-8 mb-2">
         <h4 class="card-header text-success">Monitor</h4>
         <div class="card-body">
-          <p class="card-text" id="monitor" style="color: #45ff00; font-size: 25px;"></p>
-          <p class="card-text" id="monitor2" style="color: #45ff00 ; font-size: 25px;"></p>
+          <p
+            class="card-text"
+            id="monitor1"
+            style="color: #45ff00; font-size: 25px"
+          ></p>
+          <p
+            class="card-text"
+            id="monitor2"
+            style="color: #45ff00; font-size: 25px"
+          ></p>
         </div>
       </div>
 
-      <button id="start" type="button" class="btn btn-success btn-lg col-8 mb-2">
+      <button
+        id="start"
+        type="button"
+        class="btn btn-success btn-lg col-8 mb-2"
+        style="visibility: visible"
+      >
         Start
       </button>
-      <button id="stop" type="button" class="btn btn-danger btn-lg col-8">
-        Stop
+      <button
+        id="stop"
+        type="button"
+        class="btn btn-danger btn-lg col-8"
+        style="visibility: hidden"
+      >
+        Emergency Stop
       </button>
     </div>
 
-    <script
-      src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
-      integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
-      crossorigin="anonymous"
-    ></script>
-    <script
-      src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
-      integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
-      crossorigin="anonymous"
-    ></script>
-    <script
-      src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
-      integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV"
-      crossorigin="anonymous"
-    ></script>
-
-    <!-- important!! include socket.io client side script -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
     <script>
       //load socket.io-client and connect to the host that serves the page
       var socket = io();
       var type = 5.5;
       var length = 40;
-
+      var minutes;
+      var seconds;
+      var finishTimer;
       var intervalId;
 
-      document.getElementById("monitor").innerHTML =
+      document.getElementById("monitor1").innerHTML =
         "Hello, press 'Start' to start welding";
       document.getElementById("monitor2").innerHTML = `Screw ${type}x${length}`;
 
-      function startTimer() {
-        var minutes = 1;
-        var seconds = 16;
+      // Listen for messages from the server
+      socket.on("message1", (message) => {
+        console.log(message); // "Hello from the server!"
+        document.getElementById("monitor1").innerHTML = message;
+      });
+      socket.on("message2", (message) => {
+        console.log(message); // "Hello from the server!"
+        document.getElementById("monitor2").innerHTML = message;
+      });
+
+      function startTimer(minutes, seconds) {
+        finishTimer = 0;
+        minutesConst = minutes;
+        secondsConst = seconds;
         intervalId = setInterval(function () {
           seconds--;
           if (seconds < 0) {
@@ -91,9 +118,38 @@
           }
           if (minutes < 0) {
             clearInterval(intervalId);
-            // alert("Time's up!");
-            seconds = 16;
-            minutes = 1;
+            //Make the buttons pressables and appear
+            document.getElementById("home").style.transform = "scale(1)";
+            document.getElementById("home").style.visibility = "visible";
+            document.getElementById("home").style.opacity = 0;
+            document.getElementById("start").style.transform = "scale(1)";
+            document.getElementById("start").style.visibility = "visible";
+            document.getElementById("start").style.opacity = 0;
+            document.getElementById("back").style.transform = "scale(1)";
+            document.getElementById("back").style.visibility = "visible";
+            document.getElementById("back").style.opacity = 0;
+            setTimeout(function () {
+              document.getElementById("back").style.transition =
+                "opacity 0.5s ease-in-out";
+              document.getElementById("back").style.opacity = 1;
+              document.getElementById("home").style.transition =
+                "opacity 1s ease-in-out";
+              document.getElementById("home").style.opacity = 1;
+              document.getElementById("start").style.transition =
+                "opacity 1.5s ease-in-out";
+              document.getElementById("start").style.opacity = 1;
+            }, 50);
+            //Disappear Stop button
+            document.getElementById("stop").style.transition =
+              "opacity 0.5s ease-in-out";
+            document.getElementById("stop").style.opacity = 0;
+            document.getElementById("stop").style.transform = "scale(0)";
+            $("#monitor1").text(`Press 'Start' to start welding`);
+            finishTimer = 1;
+          }
+          if (finishTimer) {
+            minutes = minutesConst;
+            seconds = secondsConst;
           }
           document.getElementById(
             "monitor2"
@@ -101,56 +157,139 @@
         }, 1000);
       }
 
-      // Listen for messages from the server
-      socket.on("message", (message) => {
-        console.log(message); // "Hello from the server!"
-        document.getElementById("monitor2").innerHTML = message;
-      });
+      function back() {
+        socket.emit("stop");
+        document.location.href = "http://localhost:3000/FiveandHalf";
+      }
+
       $("#home").on("click", () => {
-        console.log(`Go to home position`);
-        $("#monitor").text(`Go to home position`);
         socket.emit("home");
+        //Appear Stop button
+        document.getElementById("stop").style.visibility = "visible";
+        document.getElementById("stop").style.opacity = 0;
+        setTimeout(function () {
+          document.getElementById("stop").style.transition =
+            "opacity 1s ease-in-out";
+          document.getElementById("stop").style.opacity = 1;
+        }, 50);
+        //Disappear Start button
+        document.getElementById("start").style.transition =
+          "opacity 1s ease-in-out";
+        document.getElementById("start").style.opacity = 0;
+        //Disappear Back button
+        document.getElementById("back").style.transition =
+          "opacity 1s ease-in-out";
+        document.getElementById("back").style.opacity = 0;
+        //Make the buttons pressables
+        document.getElementById("stop").style.transform = "scale(1)";
+        document.getElementById("back").style.transform = "scale(1)";
+        document.getElementById("start").style.transform = "scale(1)";
+        setTimeout(function () {
+          document.getElementById("start").style.transition =
+            "opacity 5s ease-in-out";
+          document.getElementById("start").style.opacity = 1;
+          document.getElementById("back").style.transition =
+            "opacity 5s ease-in-out";
+          document.getElementById("back").style.opacity = 1;
+          document.getElementById("stop").style.transition =
+            "transform 10s ease-in-out";
+          document.getElementById("stop").style.transform = "scale(0)";
+        }, 1000);
+        setTimeout(function () {
+          $("#monitor1").text(`Press 'Start' to start welding`);
+        }, 9000);
+        console.log(`Go to home position (front)`);
       });
+
       $("#start").on("click", () => {
-        startTimer();
-        console.log(`Start ${type}x${length}`);
-        $("#monitor").text(`Screw ${type}x${length}`);
         socket.emit("start", {
           screwType: type,
           screwLength: length,
-          revX1: 2.373 / 4,
-          revX2: 7.234 / 4,
-          revX3: 2.5 / 4,
-          revX4: 10.5 / 4,
-          revX5: 2.19 / 4,
-          revZ1: 0, // const
-          revZ2: 0.36 / 2,
-          revZ3: 0, // const
-          revZ4: 0.85 / 2,
-          revZ5: 0.178 / 2,
-          revA1: 1.079,
-          revA2: 3.287,
-          revA3: 1.136,
-          revA4: 4.773,
-          revA5: 1,
+          revX1: 1.1 / 4,
+          revX2: 8.8 / 4,
+          revX3: 22 / 4,
+          revX4: 15.5 / 4,
+          revX5: 0 / 4,
+          revZ1: 0.174 / 2,
+          revZ2: 0.369 / 2,
+          revZ3: 0 / 2,
+          revZ4: 1.228 / 2,
+          revZ5: 0 / 2,
+          revA1: 0.5,
+          revA2: 4,
+          revA3: 10,
+          revA4: 7.091,
+          revA5: 0,
+          speedZ1: 8.8,
+          speedZ2: 8.8,
+          speedZ3: 10,
+          speedZ4: 8.8,
+          speedZ5: 8.8,
+          speedX: 56,
+          speedA: 100,
           revXstartPoint: 2,
-          revAstartPoint: 0,
+          // revAstartPoint: 0,
           revZstartPoint: 2,
-          TotalRevX: 6.3,
-          TotalRevZ: 0.7,
+          TotalRevX: 13, // for safety
+          TotalRevZ: 0.9, // for safety
         });
+        startTimer(2, 50); // minutes, seconds
+        //Disappear Back button
+        document.getElementById("back").style.transition =
+          "opacity 0.5s ease-in-out";
+        document.getElementById("back").style.opacity = 0;
+        //Disappear Home button
+        document.getElementById("home").style.transition =
+          "opacity 1s ease-in-out";
+        document.getElementById("home").style.opacity = 0;
+        //Disappear Start button
+        document.getElementById("start").style.transition =
+          "opacity 1.5s ease-in-out";
+        document.getElementById("start").style.opacity = 0;
+        //Appear Stop button
+        document.getElementById("stop").style.visibility = "visible";
+        document.getElementById("stop").style.transform = "scale(0)";
+        setTimeout(function () {
+          document.getElementById("stop").style.opacity = 1;
+          document.getElementById("stop").style.transition =
+            "transform 1s ease-in-out";
+          document.getElementById("stop").style.transform = "scale(1)";
+          // Make the buttons unpressables
+          document.getElementById("back").style.transform = "scale(0)";
+          document.getElementById("home").style.transform = "scale(0)";
+          document.getElementById("start").style.transform = "scale(0)";
+        }, 1000);
+        console.log(`Start ${type}x${length} (front)`);
+        // $("#monitor").text(`Screw ${type}x${length}`);
       });
-      function back() {
-        document.location.href = "http://localhost:3000/FiveAndHalf";
-      }
+
       $("#stop").on("click", () => {
-        clearInterval(intervalId);
-        console.log(`Stop ${type}x${length}`);
-        $("#monitor").text(`Stop ${type}x${length}`);
         socket.emit("stop", {
           screwType: type,
           screwLength: length,
         });
+        // Make the buttom pressables
+        document.getElementById("home").style.transform = "scale(1)";
+        //Disappear Stop button
+        document.getElementById("stop").style.transition =
+          "opacity 0.5s ease-in-out";
+        document.getElementById("stop").style.opacity = 0;
+        document.getElementById("home").style.visibility = "visible";
+        document.getElementById("home").style.opacity = 0;
+        setTimeout(function () {
+          document.getElementById("home").style.transition =
+            "opacity 0.5s ease-in-out";
+          document.getElementById("home").style.opacity = 1;
+          // Make the buttoמ unpressables
+          document.getElementById("stop").style.transform = "scale(0)";
+          document.getElementById("back").style.transform = "scale(0)";
+        }, 100);
+        document.getElementById("start").style.transition =
+          "opacity 1s ease-in-out";
+        document.getElementById("start").style.opacity = 0;
+        clearInterval(intervalId);
+        console.log(`Stop ${type}x${length} (front)`);
+        // $("#monitor").text(`Stop ${type}x${length}`);
       });
     </script>
   </body>
